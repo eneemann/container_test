@@ -14,7 +14,9 @@ ENV PATH /opt/conda/bin:$PATH
 RUN pip install zipfile36 \
 	wget
 	
-RUN apt-get install nano
+RUN apt-get update \
+    apt-get install nano \
+	apt-get install -y git
 
 #Setup File System
 RUN mkdir ds
