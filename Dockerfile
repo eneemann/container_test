@@ -14,18 +14,20 @@ ENV PATH /opt/conda/bin:$PATH
 RUN pip install zipfile36 \
 	wget
 	
-RUN apt-get update \
-    apt-get install nano \
-	apt-get install -y git
+RUN apt-get update
+RUN apt-get install nano
+RUN apt-get install -y git
 
 #Setup File System
 RUN mkdir ds
 ENV HOME=/ds
-VOLUME /ds
+
 WORKDIR /ds
 
 #Copy data into file system
 #COPY ["C:/Users/eneemann/Desktop/GKE Container/",  "./"]
 #COPY . ./
 
-RUN git clone https://github.com/eneemann/container_test.git .
+RUN git clone https://github.com/eneemann/container_test.git /ds
+
+VOLUME /ds
