@@ -12,7 +12,8 @@ RUN conda install -y -c conda-forge rasterio \
 ENV PATH /opt/conda/bin:$PATH
 
 RUN pip install zipfile36 \
-	wget
+	wget \
+	google-cloud-storage
 	
 RUN apt-get update
 RUN apt-get install nano
