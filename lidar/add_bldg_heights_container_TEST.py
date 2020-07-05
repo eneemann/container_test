@@ -20,6 +20,7 @@ import zipfile
 from statistics import mean
 from urllib.error import HTTPError
 from tqdm import tqdm
+from google.cloud import storage
 
 # Start timer and print start time in UTC
 start_time = time.time()
@@ -32,6 +33,11 @@ print("The script start time is {}".format(readable_start))
 os.environ["PROJ_LIB"] = r"/opt/conda/share"
 shapely.speedups.enable()     # Speed up shapely operations
 pd.options.mode.chained_assignment = None     # Turn off SettingWithCopyWarning
+
+# Initialize google cloud storage client
+client_storage = storage.Client()
+out = 'container_test'
+out_bucket = client_storage.get_bucket(out)
 
 # Set variables to use later in the code
 work_dir = r'/ds/lidar'
@@ -230,10 +236,16 @@ for i in tqdm(np.arange(dsm_index.shape[0])):
         print('    No overlapping footprints in tile, moving on ...')
 
 
-# export footprints with new data to shapefile
+# Export footprints with new data to shapefile
 #out_file = os.path.join(work_dir, 'footprints_' + tile_base + '.shp')
 out_file = os.path.join(work_dir, out_name + '.shp')
 all_footprints.to_file(driver = 'ESRI Shapefile', filename=out_file)
+
+# Upload to google cloud storage
+out_gcs = out_name + '.shp'
+new_blob = out_bucket.blob(out_gcs)
+new_blob.upload_from_filename(out_file)
+print(f'{out_gcs} uploaded to: gs://{out_bucket}/{out_name}')
 
 print(f"Average time per tile index (in seconds): {mean(tile_times)}")
 
