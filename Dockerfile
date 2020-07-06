@@ -33,6 +33,6 @@ RUN git clone https://github.com/eneemann/container_test.git /ds
 
 VOLUME /ds
 
-CMD ["/ds/lidar/add_bldg_heights_container_TEST.py"]
-ENTRYPOINT ["python"]
+#CMD ["/ds/lidar/add_bldg_heights_container_TEST.py"]
+#ENTRYPOINT ["python"]
 

@@ -27,6 +27,8 @@ start_time = time.time()
 readable_start = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
 print("The script start time is {}".format(readable_start))
 
+today = time.strftime("%Y%m%d")
+
 # Set up environment and point to the right projection files
 # os.environ["PROJ_LIB"] = r"C:\Users\eneemann\AppData\Local\ESRI\conda\envs\erik_test\Library\share"
 # Apparent location for container install:
@@ -34,10 +36,10 @@ os.environ["PROJ_LIB"] = r"/opt/conda/share"
 shapely.speedups.enable()     # Speed up shapely operations
 pd.options.mode.chained_assignment = None     # Turn off SettingWithCopyWarning
 
-# # Initialize google cloud storage client
-# client_storage = storage.Client()
-# out = 'container_test'
-# out_bucket = client_storage.get_bucket(out)
+# Initialize google cloud storage client
+client_storage = storage.Client()
+out = 'container_test'
+out_bucket = client_storage.get_bucket(out)
 
 # Set variables to use later in the code
 work_dir = r'/ds/lidar'
@@ -47,7 +49,7 @@ dsm_tiles = 'LiDAR2013_2014_50cm_SLCounty_DSM_Tiles.shp'
 dtm_gcp_path = r'https://storage.googleapis.com/state-of-utah-sgid-downloads/lidar/wasatch-front-2013-2014/DTMs/'
 dtm_tiles = 'LiDAR2013_2014_50cm_SLCounty_DTM_Tiles.shp'
 bldg_footprints = 'SLCounty_footprints_small.shp'
-out_name = 'SLC_small_TEST_footprints'
+out_name = 'SLC_small_TEST_footprints_' + today
 
 # Create DSM and DTM directories
 dsm_dir = os.path.join(work_dir, 'DSM')
@@ -246,6 +248,17 @@ all_footprints.to_file(driver = 'ESRI Shapefile', filename=out_file)
 # new_blob = out_bucket.blob(out_gcs)
 # new_blob.upload_from_filename(out_file)
 # print(f'{out_gcs} uploaded to: gs://{out_bucket}/{out_name}')
+
+# Upload all shapefile components to google cloud storage
+def upload_files(directory, bucket):
+    for file in os.listdir(directory):
+        if out_name in file:
+            new_blob = bucket.blob(file)
+            new_blob.upload_from_filename(os.path.join(work_dir, file))
+            print(f'{file} uploaded to: gs://{bucket}/{file}')
+
+
+upload_files(work_dir, out_bucket)
 
 print(f"Average time per tile index (in seconds): {mean(tile_times)}")
 
