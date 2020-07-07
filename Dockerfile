@@ -25,6 +25,9 @@ ENV HOME=/ds
 
 WORKDIR /ds
 
+# Sets cache date that can be avoided with an argument
+ARG CACHE_DATE=2016-01-01
+
 #Copy data into file system
 RUN git clone https://github.com/eneemann/container_test.git /ds
 
