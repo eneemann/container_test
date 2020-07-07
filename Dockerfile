@@ -26,9 +26,6 @@ ENV HOME=/ds
 WORKDIR /ds
 
 #Copy data into file system
-#COPY ["C:/Users/eneemann/Desktop/GKE Container/",  "./"]
-#COPY . ./
-
 RUN git clone https://github.com/eneemann/container_test.git /ds
 
 VOLUME /ds
