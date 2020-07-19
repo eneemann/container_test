@@ -101,17 +101,17 @@ def random_points(n, poly_df):
 
 
 # Function to add heights as columns in GeoDataFrame - input is single-feature GeoDataFrame
-def get_height(row):
+def get_height(row, dsm_f, dtm_f):
     sample = random_points(25, row)
     
     # get DSM and DTM values at each sample point
     # open the raster and store metadata
     coords = [(x,y) for x, y in zip(sample.geometry.x, sample.geometry.y)]
     
-    with rio.open(dsm_file) as src:
+    with rio.open(dsm_f) as src:
         sample['dsm'] = [x[0] for x in src.sample(coords)]
         
-    with rio.open(dtm_file) as src:
+    with rio.open(dtm_f) as src:
         sample['dtm'] = [x[0] for x in src.sample(coords)]
     
     sample['diff'] = sample['dsm'] - sample['dtm']    
@@ -146,7 +146,7 @@ keep_cols = ['NAME', 'TYPE', 'ADDRESS', 'CITY', 'ZIP5', 'COUNTY',
              'FIPS', 'PARCEL_ID', 'SRC_YEAR', 'geometry', 'dsm', 'dtm', 'diff', 'height_ft']
 
 # Initialize all_footprints as None and tile_times as empty list
-all_footprints = None
+# all_footprints = None
 tile_times = []
 
 
@@ -198,7 +198,7 @@ def multi_func(x):
         # Iterate over footprints in the tile    
         for j in np.arange(subset.shape[0]):
             temp = subset.iloc[[j]]
-            updated = get_height(temp)
+            updated = get_height(temp, dsm_file, dtm_file)
             if j == 0:
                 subset_final = updated
             else:
@@ -224,11 +224,13 @@ def multi_func(x):
         subset_final = subset_final[keep_cols]
         # subset_final = subset_final.to_crs(epsg=26912)
     
-        if x == 0 or all_footprints is None:
-            all_footprints = subset_final
-        else:
-            all_footprints = all_footprints.append(subset_final, ignore_index=True)
+        # if x == 0 or all_footprints is None:
+        #     all_footprints = subset_final
+        # else:
+        #     all_footprints = all_footprints.append(subset_final, ignore_index=True)
             
+        return subset_final
+    
         del updated
         del subset_final
         
@@ -242,7 +244,8 @@ def multi_func(x):
 # for i in np.arange(1):
 
 pool = multiprocessing.Pool(processes=None)  # use all available cores
-pool.map(multi_func, tqdm(np.arange(dsm_index.shape[0])))
+results = pool.map(multi_func, tqdm(np.arange(dsm_index.shape[0])))
+all_footprints = pd.concat(results)
 pool.close()
 
 # Export footprints with new data to shapefile
