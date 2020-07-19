@@ -49,7 +49,7 @@ dsm_gcp_path = r'https://storage.googleapis.com/state-of-utah-sgid-downloads/lid
 dsm_tiles = 'LiDAR2013_2014_50cm_SLCounty_DSM_Tiles.shp'
 dtm_gcp_path = r'https://storage.googleapis.com/state-of-utah-sgid-downloads/lidar/wasatch-front-2013-2014/DTMs/'
 dtm_tiles = 'LiDAR2013_2014_50cm_SLCounty_DTM_Tiles.shp'
-bldg_footprints = 'SLCounty_footprints_small.shp'
+bldg_footprints = 'SLCounty_footprints_small_new.shp'
 out_name = 'SLC_small_TEST_footprints_' + today
 
 # Create DSM and DTM directories
@@ -94,8 +94,8 @@ def random_points(n, poly_df):
     # keep only 25 points of the random points
     final = sample.head(n)
     if sample.shape[0] < 25:
-        print(f'Only {sample.shape[0]} sample points available for ADDRESS, X, Y: \
-                      {poly_df.ADDRESS, poly_df.geometry.centroid.x, poly_df.geometry.centroid.y}')
+        print(f'Only {sample.shape[0]} sample points available for address, X, Y: \
+                      {poly_df.address, poly_df.geometry.centroid.x, poly_df.geometry.centroid.y}')
     
     return final
 
@@ -136,14 +136,14 @@ footprints = gpd.read_file(os.path.join(work_dir, bldg_footprints))
 # print(dsm_index.crs)
 
 county_list = ['SALT LAKE']
-footprints_SL = footprints[footprints['COUNTY'].isin(county_list)]
+footprints_SL = footprints[footprints['county'].isin(county_list)]
 
 #ax = subset.plot(figsize=(10, 6),
 #    color='white', edgecolor='black')
 #plt.show()
 
-keep_cols = ['NAME', 'TYPE', 'ADDRESS', 'CITY', 'ZIP5', 'COUNTY',
-             'FIPS', 'PARCEL_ID', 'SRC_YEAR', 'geometry', 'dsm', 'dtm', 'diff', 'height_ft']
+keep_cols = ['name', 'type', 'address', 'city', 'zip5', 'county',
+             'fips', 'parcel_id', 'src_year', 'geometry', 'dsm', 'dtm', 'diff', 'height_ft']
 
 # Initialize all_footprints as None and tile_times as empty list
 # all_footprints = None

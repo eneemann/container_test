@@ -21,7 +21,6 @@ from statistics import mean
 from urllib.error import HTTPError
 from tqdm import tqdm
 from google.cloud import storage
-import multiprocessing
 
 # Start timer and print start time in UTC
 start_time = time.time()
@@ -49,7 +48,7 @@ dsm_gcp_path = r'https://storage.googleapis.com/state-of-utah-sgid-downloads/lid
 dsm_tiles = 'LiDAR2013_2014_50cm_SLCounty_DSM_Tiles.shp'
 dtm_gcp_path = r'https://storage.googleapis.com/state-of-utah-sgid-downloads/lidar/wasatch-front-2013-2014/DTMs/'
 dtm_tiles = 'LiDAR2013_2014_50cm_SLCounty_DTM_Tiles.shp'
-bldg_footprints = 'SLCounty_footprints_small.shp'
+bldg_footprints = 'SLCounty_footprints_small_new.shp'
 out_name = 'SLC_small_TEST_footprints_' + today
 
 # Create DSM and DTM directories
@@ -94,24 +93,24 @@ def random_points(n, poly_df):
     # keep only 25 points of the random points
     final = sample.head(n)
     if sample.shape[0] < 25:
-        print(f'Only {sample.shape[0]} sample points available for ADDRESS, X, Y: \
-                      {poly_df.ADDRESS, poly_df.geometry.centroid.x, poly_df.geometry.centroid.y}')
+        print(f'Only {sample.shape[0]} sample points available for address, X, Y: \
+                      {poly_df.address, poly_df.geometry.centroid.x, poly_df.geometry.centroid.y}')
     
     return final
 
 
 # Function to add heights as columns in GeoDataFrame - input is single-feature GeoDataFrame
-def get_height(row, dsm_f, dtm_f):
+def get_height(row):
     sample = random_points(25, row)
     
     # get DSM and DTM values at each sample point
     # open the raster and store metadata
     coords = [(x,y) for x, y in zip(sample.geometry.x, sample.geometry.y)]
     
-    with rio.open(dsm_f) as src:
+    with rio.open(dsm_file) as src:
         sample['dsm'] = [x[0] for x in src.sample(coords)]
         
-    with rio.open(dtm_f) as src:
+    with rio.open(dtm_file) as src:
         sample['dtm'] = [x[0] for x in src.sample(coords)]
     
     sample['diff'] = sample['dsm'] - sample['dtm']    
@@ -136,26 +135,26 @@ footprints = gpd.read_file(os.path.join(work_dir, bldg_footprints))
 # print(dsm_index.crs)
 
 county_list = ['SALT LAKE']
-footprints_SL = footprints[footprints['COUNTY'].isin(county_list)]
+footprints_SL = footprints[footprints['county'].isin(county_list)]
 
 #ax = subset.plot(figsize=(10, 6),
 #    color='white', edgecolor='black')
 #plt.show()
 
-keep_cols = ['NAME', 'TYPE', 'ADDRESS', 'CITY', 'ZIP5', 'COUNTY',
-             'FIPS', 'PARCEL_ID', 'SRC_YEAR', 'geometry', 'dsm', 'dtm', 'diff', 'height_ft']
+keep_cols = ['name', 'type', 'address', 'city', 'zip5', 'county',
+             'fips', 'parcel_id', 'src_year', 'geometry', 'dsm', 'dtm', 'diff', 'height_ft']
 
 # Initialize all_footprints as None and tile_times as empty list
-# all_footprints = None
-# tile_times = []
+all_footprints = None
+tile_times = []
 
+# Iterate over all rows in tile index
+for i in tqdm(np.arange(dsm_index.shape[0])):
+# for i in np.arange(1):
 
-def multi_func(x):
-    global tile_times
-    tile_times = []
     section_time = time.time()
-    row = dsm_index.iloc[[x]]
-    tile_base = row['TILE'][x]
+    row = dsm_index.iloc[[i]]
+    tile_base = row['TILE'][i]
     print(f'Working on tile {tile_base} ...')
     
     # Intersect tile and footprints to determine if any need processed
@@ -180,7 +179,7 @@ def multi_func(x):
                 dsm = wget.download(dsm_path, dsm_dir)
             except HTTPError:
                 print('Encountered HTTPError, skipping to next tile ...')
-                return
+                continue
         else:
             dsm = dsm_zip
             print(f'{dsm} already exists ...')
@@ -189,7 +188,7 @@ def multi_func(x):
             dtm = wget.download(dtm_path, dtm_dir)
         except HTTPError:
             print('Encountered HTTPError, skipping to next tile ...')
-            return
+            continue
         
         print(f'Downloaded {dsm} and {dtm} ...')
         
@@ -200,7 +199,7 @@ def multi_func(x):
         # Iterate over footprints in the tile    
         for j in np.arange(subset.shape[0]):
             temp = subset.iloc[[j]]
-            updated = get_height(temp, dsm_file, dtm_file)
+            updated = get_height(temp)
             if j == 0:
                 subset_final = updated
             else:
@@ -226,29 +225,18 @@ def multi_func(x):
         subset_final = subset_final[keep_cols]
         # subset_final = subset_final.to_crs(epsg=26912)
     
-        # if x == 0 or all_footprints is None:
-        #     all_footprints = subset_final
-        # else:
-        #     all_footprints = all_footprints.append(subset_final, ignore_index=True)
+        if i == 0 or all_footprints is None:
+            all_footprints = subset_final
+        else:
+            all_footprints = all_footprints.append(subset_final, ignore_index=True)
             
-        return subset_final
-    
         del updated
         del subset_final
         
     else:
         del subset
         print('    No overlapping footprints in tile, moving on ...')
-    
-    
-# Iterate over all rows in tile index
-# for i in tqdm(np.arange(dsm_index.shape[0])):
-# for i in np.arange(1):
 
-pool = multiprocessing.Pool(processes=None)  # use all available cores
-results = pool.map(multi_func, tqdm(np.arange(dsm_index.shape[0])))
-all_footprints = pd.concat(results)
-pool.close()
 
 # Export footprints with new data to shapefile
 #out_file = os.path.join(work_dir, 'footprints_' + tile_base + '.shp')
@@ -272,7 +260,7 @@ def upload_files(directory, bucket):
 
 upload_files(work_dir, out_bucket)
 
-# print(f"Average time per tile index (in seconds): {mean(tile_times)}")
+print(f"Average time per tile index (in seconds): {mean(tile_times)}")
 
 print("Script shutting down ...")
 # Stop timer and print end time in UTC
