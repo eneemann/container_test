@@ -147,10 +147,12 @@ keep_cols = ['NAME', 'TYPE', 'ADDRESS', 'CITY', 'ZIP5', 'COUNTY',
 
 # Initialize all_footprints as None and tile_times as empty list
 # all_footprints = None
-tile_times = []
+# tile_times = []
 
 
 def multi_func(x):
+    global tile_times
+    tile_times = []
     section_time = time.time()
     row = dsm_index.iloc[[x]]
     tile_base = row['TILE'][x]
