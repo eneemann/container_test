@@ -245,7 +245,7 @@ def multi_func(x):
 # for i in tqdm(np.arange(dsm_index.shape[0])):
 # for i in np.arange(1):
 
-total_points = multiprocessing.Pool(processes=None)  # use all available cores
+pool = multiprocessing.Pool(processes=None)  # use all available cores
 results = pool.map(multi_func, tqdm(np.arange(dsm_index.shape[0])))
 all_footprints = pd.concat(results)
 pool.close()
