@@ -80,12 +80,12 @@ def random_points(n, poly_df):
             {'dsm': [],
              'dtm': [],
              'diff': []})
-    pool = 100
+    total_points = 100
     # find the bounds of your geodataframe
     x_min, y_min, x_max, y_max = poly_df.total_bounds
     # generate random data within the bounds
-    xs = np.random.uniform(x_min, x_max, pool)
-    ys= np.random.uniform(y_min, y_max, pool)
+    xs = np.random.uniform(x_min, x_max, total_points)
+    ys= np.random.uniform(y_min, y_max, total_points)
     # convert them to a points GeoDataFrame
     poly_points = gpd.GeoDataFrame(df, geometry=[Point(x, y) for x, y in zip(xs, ys)])
     # discard points outside of polygon

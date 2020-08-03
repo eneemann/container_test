@@ -81,12 +81,12 @@ def random_points(n, poly_df):
             {'dsm': [],
              'dtm': [],
              'diff': []})
-    pool = 100
+    total_points = 100
     # find the bounds of your geodataframe
     x_min, y_min, x_max, y_max = poly_df.total_bounds
     # generate random data within the bounds
-    xs = np.random.uniform(x_min, x_max, pool)
-    ys= np.random.uniform(y_min, y_max, pool)
+    xs = np.random.uniform(x_min, x_max, total_points)
+    ys= np.random.uniform(y_min, y_max, total_points)
     # convert them to a points GeoDataFrame
     poly_points = gpd.GeoDataFrame(df, geometry=[Point(x, y) for x, y in zip(xs, ys)])
     # discard points outside of polygon
@@ -245,7 +245,7 @@ def multi_func(x):
 # for i in tqdm(np.arange(dsm_index.shape[0])):
 # for i in np.arange(1):
 
-pool = multiprocessing.Pool(processes=None)  # use all available cores
+total_points = multiprocessing.Pool(processes=None)  # use all available cores
 results = pool.map(multi_func, tqdm(np.arange(dsm_index.shape[0])))
 all_footprints = pd.concat(results)
 pool.close()
