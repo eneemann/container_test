@@ -93,9 +93,9 @@ def random_points(n, poly_df):
     sample = poly_points[poly_points.within(poly_df.unary_union)]
     # keep only 25 points of the random points
     final = sample.head(n)
-    if sample.shape[0] < 25:
-        print(f'Only {sample.shape[0]} sample points available for ADDRESS, X, Y: \
-                      {poly_df.ADDRESS, poly_df.geometry.centroid.x, poly_df.geometry.centroid.y}')
+    if sample.shape[0] < n:
+        print(f"Only {sample.shape[0]} sample points available for ADDRESS, X, Y: \
+                      {poly_df.iloc[0]['ADDRESS']}, {poly_df.iloc[0].geometry.centroid.x}, {poly_df.iloc[0].geometry.centroid.y}")
     
     return final
 
