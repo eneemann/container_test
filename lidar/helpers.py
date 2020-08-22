@@ -68,7 +68,7 @@ def random_points(n, p, poly_df):
     final = sample.head(n)
     if sample.shape[0] < n:
         print(f"Only {sample.shape[0]} sample points available for ADDRESS, X, Y: \
-                      {poly_df.iloc[0]['ADDRESS']}, {poly_df.iloc[0].geometry.centroid.x}, {poly_df.iloc[0].geometry.centroid.y}")
+                      {poly_df.iloc[0]['address']}, {poly_df.iloc[0].geometry.centroid.x}, {poly_df.iloc[0].geometry.centroid.y}")
     
     return poly_points, final
 
