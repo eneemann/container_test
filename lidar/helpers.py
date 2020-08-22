@@ -90,10 +90,10 @@ def get_height(row, dsm, dtm, keep, pool):
     sample['diff'] = sample['dsm'] - sample['dtm']
        
     # add columns for average DSM and DTM values, difference field
-    row['dsm'] = sample['dsm'].mean()
-    row['dtm'] = sample['dtm'].mean()
-    row['diff'] = sample['diff'].mean()
-    row['height_ft'] = row['diff']*3.28084
+    # row['dsm'] = sample['dsm'].mean()
+    # row['dtm'] = sample['dtm'].mean()
+    # row['diff'] = sample['diff'].mean()
+    # row['height_ft'] = row['diff']*3.28084
        
     # Add columns for final estimate fields
     row['BASE_ELEV'] = sample['dtm'].mean()*3.28084
