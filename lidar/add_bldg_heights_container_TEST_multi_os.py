@@ -31,8 +31,6 @@ print("The script start time is {}".format(readable_start))
 today = time.strftime("%Y%m%d")
 
 # Set up environment and point to the right projection files
-# os.environ["PROJ_LIB"] = r"C:\Users\eneemann\AppData\Local\ESRI\conda\envs\erik_test\Library\share"
-# Apparent location for container install:
 os.environ["PROJ_LIB"] = r"/opt/conda/share"
 shapely.speedups.enable()     # Speed up shapely operations
 pd.options.mode.chained_assignment = None     # Turn off SettingWithCopyWarning
@@ -51,6 +49,13 @@ dtm_gcp_path = r'https://storage.googleapis.com/state-of-utah-sgid-downloads/lid
 dtm_tiles = 'LiDAR2013_2014_50cm_SLCounty_DTM_Tiles.shp'
 bldg_footprints = 'SLCounty_footprints_small_new.shp'
 out_name = 'SLC_small_TEST_footprints_' + today
+county_list = ['SALT LAKE']
+pool_pts = 150        # total number of random points
+keep_pts = 25         # random points kept from sample
+
+# Import helpers functions
+sys.path.append(os.path.abspath(work_dir))
+from helpers import unzip, random_points, get_height
 
 # Create DSM and DTM directories
 dsm_dir = os.path.join(work_dir, 'DSM')
@@ -60,95 +65,20 @@ if os.path.isdir(dsm_dir) == False:
 if os.path.isdir(dtm_dir) == False:
     os.mkdir(dtm_dir)
 
-###############
-#  Functions  #
-###############
-
-# Function to unzip files into desired directory
-def unzip(directory, file):
-    os.chdir = directory
-    if file.endswith(".zip"):
-        # print(f"Unzipping {file} ...")
-        with zipfile.ZipFile(file, "r") as zip_ref:
-            zip_ref.extractall(directory)
-            
-
-# Create function to sample values at points - input is single-feature GeoDataFrame
-def random_points(n, poly_df):
-#    print(type(poly_df))
-#    print(poly_df)
-    df = pd.DataFrame(
-            {'dsm': [],
-             'dtm': [],
-             'diff': []})
-    total_points = 100
-    # find the bounds of your geodataframe
-    x_min, y_min, x_max, y_max = poly_df.total_bounds
-    # generate random data within the bounds
-    xs = np.random.uniform(x_min, x_max, total_points)
-    ys= np.random.uniform(y_min, y_max, total_points)
-    # convert them to a points GeoDataFrame
-    poly_points = gpd.GeoDataFrame(df, geometry=[Point(x, y) for x, y in zip(xs, ys)])
-    # discard points outside of polygon
-    sample = poly_points[poly_points.within(poly_df.unary_union)]
-    # keep only 25 points of the random points
-    final = sample.head(n)
-    if sample.shape[0] < n:
-        print(f"Only {sample.shape[0]} sample points available for ADDRESS, X, Y: \
-                      {poly_df.iloc[0]['ADDRESS']}, {poly_df.iloc[0].geometry.centroid.x}, {poly_df.iloc[0].geometry.centroid.y}")
-    
-    return final
-
-
-# Function to add heights as columns in GeoDataFrame - input is single-feature GeoDataFrame
-def get_height(row, dsm_f, dtm_f):
-    sample = random_points(25, row)
-    
-    # get DSM and DTM values at each sample point
-    # open the raster and store metadata
-    coords = [(x,y) for x, y in zip(sample.geometry.x, sample.geometry.y)]
-    
-    with rio.open(dsm_f) as src:
-        sample['dsm'] = [x[0] for x in src.sample(coords)]
-        
-    with rio.open(dtm_f) as src:
-        sample['dtm'] = [x[0] for x in src.sample(coords)]
-    
-    sample['diff'] = sample['dsm'] - sample['dtm']    
-    
-    # add columns for average DSM and DTM values, difference field
-    row['dsm'] = sample['dsm'].mean()
-    row['dtm'] = sample['dtm'].mean()
-    row['diff'] = sample['diff'].mean()
-    row['height_ft'] = row['diff']*3.28084
-    
-    return row
-
-
 # Read in lidar index tile and building footprints shapefiles
 dsm_index = gpd.read_file(os.path.join(work_dir, dsm_tiles))
 dtm_index = gpd.read_file(os.path.join(work_dir, dtm_tiles))
 footprints = gpd.read_file(os.path.join(work_dir, bldg_footprints))
-# First transform footprints into UTM 12N (26912) - units are meters
-#footprints = footprints.to_crs(epsg=26912)
-#footprints = footprints.to_crs(dsm_index.crs)
-# print(footprints.crs)
-# print(dsm_index.crs)
 
-county_list = ['SALT LAKE']
+# Filter down to footprints in county list
 footprints_SL = footprints[footprints['county'].isin(county_list)]
 
-#ax = subset.plot(figsize=(10, 6),
-#    color='white', edgecolor='black')
-#plt.show()
-
 keep_cols = ['name', 'type', 'address', 'city', 'zip5', 'county',
-             'fips', 'parcel_id', 'src_year', 'geometry', 'dsm', 'dtm', 'diff', 'height_ft']
+             'fips', 'parcel_id', 'src_year', 'geometry', 'BASE_ELEV', 'HEIGHT_EST', 'HEIGHT_STD']
 
 # Initialize all_footprints as None and tile_times as empty list
 # all_footprints = None
 # tile_times = []
-
 
 def multi_func(x):
     global tile_times
@@ -200,7 +130,7 @@ def multi_func(x):
         # Iterate over footprints in the tile    
         for j in np.arange(subset.shape[0]):
             temp = subset.iloc[[j]]
-            updated = get_height(temp, dsm_file, dtm_file)
+            updated = get_height(temp, dsm_file, dtm_file, keep_pts, pool_pts)
             if j == 0:
                 subset_final = updated
             else:
@@ -224,7 +154,6 @@ def multi_func(x):
         section_time = time.time()
         
         subset_final = subset_final[keep_cols]
-        # subset_final = subset_final.to_crs(epsg=26912)
     
         # if x == 0 or all_footprints is None:
         #     all_footprints = subset_final
