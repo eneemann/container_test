@@ -90,7 +90,12 @@ def multi_func(x):
     
     # Intersect tile and footprints to determine if any need processed
     tile = dsm_index[dsm_index['TILE'] == tile_base]
+    # this method clips footprint to part that's inside of tile
     subset = gpd.overlay(tile, footprints_SL, how='intersection')
+    # this method only selects footprints completely within the tile
+    subset = footprints_SL.copy()
+    subset['test'] = footprints_SL.apply(lambda x: tile.geometry.contains(x.geometry), axis=1)
+    subset = subset[subset['test']]
     
     if subset.shape[0] != 0:
         
