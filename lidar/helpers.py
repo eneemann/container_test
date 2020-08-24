@@ -54,21 +54,24 @@ def random_points(n, p, poly_df):
     # print(float(poly_df.area))
     # buff_size = -2
     
-    if float(poly_df.area) < 100:
+    if float(poly_df.area) < 75:
+        buff_size = 0
+    elif float(poly_df.area) < 100:
         buff_size = -1
     elif float(poly_df.area) > 2500:
         buff_size = -4
     else:
         buff_size = -2
         
+    
     neg_buff = poly_df.geometry.buffer(buff_size)
     sample = poly_points[poly_points.within(neg_buff.unary_union)]
     # sample = poly_points[poly_points.within(poly_df.unary_union)]
     # keep only n points of the random points
-    final = sample.head(n)
-    if sample.shape[0] < n:
-        print(f"Only {sample.shape[0]} sample points available for ADDRESS, X, Y: \
-                      {poly_df.iloc[0]['address']}, {poly_df.iloc[0].geometry.centroid.x}, {poly_df.iloc[0].geometry.centroid.y}")
+    final = sample.head(n + 10)
+    # if sample.shape[0] < n:
+    #     print(f"Only {sample.shape[0]} sample points available for ADDRESS, X, Y: \
+    #                   {poly_df.iloc[0]['address']}, {poly_df.iloc[0].geometry.centroid.x}, {poly_df.iloc[0].geometry.centroid.y}")
     
     return poly_points, final
 
@@ -89,17 +92,26 @@ def get_height(row, dsm, dtm, keep, pool):
     
     sample['diff'] = sample['dsm'] - sample['dtm']
        
-    # add columns for average DSM and DTM values, difference field
-    # row['dsm'] = sample['dsm'].mean()
-    # row['dtm'] = sample['dtm'].mean()
-    # row['diff'] = sample['diff'].mean()
-    # row['height_ft'] = row['diff']*3.28084
+    # Keep only points with a height difference > 1 m (avoid points that miss the building)
+    sample = sample[sample['diff'] > 1.0 ]
+    # Reduce down to number of points in keep variable
+    sample = sample.head(keep)
+    if sample.shape[0] < keep:
+        print(f"Only {sample.shape[0]} sample points used for ADDRESS, X, Y: \
+              {row.iloc[0]['address']}, {row.iloc[0].geometry.centroid.x}, {row.iloc[0].geometry.centroid.y}")
+    
+    # print(sample.to_string())
        
     # Add columns for final estimate fields
     row['BASE_ELEV'] = sample['dtm'].mean()*3.28084
     row['HEIGHT_EST'] = (sample['dsm'].median() - sample['dtm'].mean())*3.28084
     row['HEIGHT_STD'] = np.std(sample['diff'])*3.28084
     
+    # set height estimate to NaN when footprint area is too small
+    if float(row.area) < 75:
+        row['HEIGHT_EST'] = np.nan
+        print(f"    The area of '{row.iloc[0]['address']}' is too small to reliably estimate building height")
+
     # fig, ax = plt.subplots(figsize=(14, 7))
     # row.plot(ax=ax, color='lightgray', edgecolor='black')
     # full.plot(ax=ax, color='black', markersize=11, label='All')
