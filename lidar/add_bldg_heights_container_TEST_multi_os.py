@@ -55,7 +55,7 @@ keep_pts = 25         # random points kept from sample
 
 # Import helpers functions
 sys.path.append(os.path.abspath(work_dir))
-from helpers import unzip, random_points, get_height
+from helpers_2 import unzip, random_points, get_height
 
 # Create DSM and DTM directories
 dsm_dir = os.path.join(work_dir, 'DSM')
