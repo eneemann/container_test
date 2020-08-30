@@ -110,7 +110,7 @@ def get_height(row, dsm, dtm, keep, pool):
     # set height estimate to NaN when footprint area is too small
     if float(row.area) < 75:
         row['HEIGHT_EST'] = np.nan
-        print(f"    The area of '{row.iloc[0]['address']}' is too small to reliably estimate building height")
+        # print(f"    The area of '{row.iloc[0]['address']}' is too small to reliably estimate building height")
 
     # fig, ax = plt.subplots(figsize=(14, 7))
     # row.plot(ax=ax, color='lightgray', edgecolor='black')
