@@ -81,6 +81,11 @@ good_index = dsm_index.copy()
 good_index['test'] = good_index.apply(lambda x: x.geometry.intersects(foot_one.iloc[0].geometry), axis=1)
 good_index = good_index[good_index['test']]
 
+while good_index.shape[0] < 24:
+    good_index = good_index.append(pd.Series([np.nan]), ignore_index=True)
+    
+print(f'The length of good_index is: {good_index.shape[0]}')
+
 keep_cols = ['name', 'type', 'address', 'city', 'zip5', 'county',
              'fips', 'parcel_id', 'src_year', 'geometry', 'BASE_ELEV', 'HEIGHT_EST', 'HEIGHT_STD']
 
@@ -92,6 +97,11 @@ def multi_func(x):
     global tile_times
     tile_times = []
     section_time = time.time()
+    
+    if isinstance(good_index.iloc[x]['TILE'], float):
+        print(f'Skipping placeholder tile index ...')
+        return
+    
     row = good_index.iloc[[x]]
     tile_base = row['TILE'][x]
     print(f'Working on tile {tile_base} ...')
