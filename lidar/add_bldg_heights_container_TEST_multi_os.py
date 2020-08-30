@@ -71,7 +71,15 @@ dtm_index = gpd.read_file(os.path.join(work_dir, dtm_tiles))
 footprints = gpd.read_file(os.path.join(work_dir, bldg_footprints))
 
 # Filter down to footprints in county list
-footprints_SL = footprints[footprints['county'].isin(county_list)]
+footprints_county = footprints[footprints['county'].isin(county_list)]
+
+# Convert footprints into single, mulipolygon feature
+foot_one = footprints_county.dissolve(by='county')
+
+# Filter down to tile that intersect footprints
+good_index = dsm_index.copy()
+good_index['test'] = good_index.apply(lambda x: x.geometry.intersects(foot_one.iloc[0].geometry), axis=1)
+good_index = good_index[good_index['test']]
 
 keep_cols = ['name', 'type', 'address', 'city', 'zip5', 'county',
              'fips', 'parcel_id', 'src_year', 'geometry', 'BASE_ELEV', 'HEIGHT_EST', 'HEIGHT_STD']
@@ -84,17 +92,17 @@ def multi_func(x):
     global tile_times
     tile_times = []
     section_time = time.time()
-    row = dsm_index.iloc[[x]]
+    row = good_index.iloc[[x]]
     tile_base = row['TILE'][x]
     print(f'Working on tile {tile_base} ...')
     
     # Intersect tile and footprints to determine if any need processed
-    tile = dsm_index[dsm_index['TILE'] == tile_base]
+    tile = good_index[good_index['TILE'] == tile_base]
     # this method clips footprint to part that's inside of tile
-    # subset = gpd.overlay(tile, footprints_SL, how='intersection')
+    # subset = gpd.overlay(tile, footprints_county, how='intersection')
     # this method only selects footprints completely within the tile
-    subset = footprints_SL.copy()
-    subset['test'] = footprints_SL.apply(lambda x: tile.geometry.contains(x.geometry), axis=1)
+    subset = footprints_county.copy()
+    subset['test'] = footprints_county.apply(lambda x: tile.geometry.contains(x.geometry), axis=1)
     subset = subset[subset['test']]
     
     if subset.shape[0] != 0:
@@ -180,7 +188,7 @@ def multi_func(x):
 # for i in np.arange(1):
 
 pool = multiprocessing.Pool(processes=None)  # use all available cores
-results = pool.map(multi_func, np.arange(dsm_index.shape[0]))
+results = pool.map(multi_func, np.arange(good_index.shape[0]))
 all_footprints = pd.concat(results)
 pool.close()
 
