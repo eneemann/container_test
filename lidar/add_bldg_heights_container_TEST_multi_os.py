@@ -50,12 +50,12 @@ dtm_tiles = 'LiDAR2013_2014_50cm_SLCounty_DTM_Tiles.shp'
 bldg_footprints = 'SLCounty_footprints_small_new.shp'
 out_name = 'SLC_small_TEST_footprints_' + today
 county_list = ['SALT LAKE']
-pool_pts = 150        # total number of random points
-keep_pts = 25         # random points kept from sample
+pool_pts = 300        # total number of random points
+keep_pts = 50         # random points kept from sample
 
 # Import helpers functions
 sys.path.append(os.path.abspath(work_dir))
-from helpers_2 import unzip, random_points, get_height
+from helpers import unzip, random_points, get_height
 
 # Create DSM and DTM directories
 dsm_dir = os.path.join(work_dir, 'DSM')
