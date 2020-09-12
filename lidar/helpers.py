@@ -109,7 +109,7 @@ def get_height(row, dsm, dtm, keep, pool):
     row['SAMPLE_PTS'] = sample.shape[0]
     
     # set height estimate to NaN when footprint area is too small
-    if float(row.area) < 75:
+    if float(row.area) < 37:
         row['HEIGHT_EST'] = np.nan
         # print(f"    The area of '{row.iloc[0]['address']}' is too small to reliably estimate building height")
 
