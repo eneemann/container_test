@@ -96,7 +96,7 @@ def get_height(row, dsm, dtm, keep, pool):
     sample = sample[sample['diff'] > 1.0 ]
     # Reduce down to number of points in keep variable
     sample = sample.head(keep)
-    if sample.shape[0] < keep:
+    if sample.shape[0] < 20:
         print(f"Only {sample.shape[0]} sample points used for ADDRESS, X, Y: \
               {row.iloc[0]['address']}, {row.iloc[0].geometry.centroid.x}, {row.iloc[0].geometry.centroid.y}")
     
