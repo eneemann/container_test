@@ -87,7 +87,7 @@ while good_index.shape[0] < 24:
 print(f'The length of good_index is: {good_index.shape[0]}')
 
 keep_cols = ['name', 'type', 'address', 'city', 'zip5', 'county',
-             'fips', 'parcel_id', 'src_year', 'geometry', 'BASE_ELEV', 'HEIGHT_EST', 'HEIGHT_STD']
+             'fips', 'parcel_id', 'src_year', 'geometry', 'BASE_ELEV', 'HEIGHT_EST', 'HEIGHT_STD', 'SAMPLE_PTS']
 
 # Initialize all_footprints as None and tile_times as empty list
 # all_footprints = None

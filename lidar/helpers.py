@@ -106,6 +106,7 @@ def get_height(row, dsm, dtm, keep, pool):
     row['BASE_ELEV'] = sample['dtm'].mean()*3.28084
     row['HEIGHT_EST'] = (sample['dsm'].median() - sample['dtm'].mean())*3.28084
     row['HEIGHT_STD'] = np.std(sample['diff'])*3.28084
+    row['SAMPLE_PTS'] = sample.shape[0]
     
     # set height estimate to NaN when footprint area is too small
     if float(row.area) < 75:
